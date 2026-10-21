@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Demo WebApp - 覆盖率验证</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 32px auto; padding: 0 16px; color: #303133; }
+    section { border: 1px solid #dcdfe6; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+    h2 { margin-top: 0; font-size: 18px; }
+    input, select, button { font-size: 14px; padding: 6px 10px; margin-right: 6px; }
+    button { cursor: pointer; }
+    .result { margin-top: 10px; min-height: 20px; }
+    .error { color: #f56c6c; }
+    ul { padding-left: 0; list-style: none; }
+    li { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+    li.done span { text-decoration: line-through; color: #909399; }
+    li span { flex: 1; }
+  </style>
+</head>
+<body>
+  <h1>Demo WebApp</h1>
+  <p>部署后先采集一次覆盖率（业务类为 0%），再操作下面的功能，然后再采集一次。</p>
+
+  <section>
+    <h2>计算器（Calculator）</h2>
+    <label for="a">数值 A</label>
+    <input id="a" type="number" value="6" aria-label="数值 A">
+    <label for="op">运算</label>
+    <select id="op" aria-label="运算">
+      <option value="add">+</option>
+      <option value="sub">-</option>
+      <option value="mul">×</option>
+      <option value="div">÷</option>
+    </select>
+    <label for="b">数值 B</label>
+    <input id="b" type="number" value="3" aria-label="数值 B">
+    <button id="calcBtn" type="button">计算</button>
+    <div id="calcResult" class="result" role="status" aria-live="polite"></div>
+  </section>
+
+  <section>
+    <h2>待办（TodoService）</h2>
+    <label for="title">新待办</label>
+    <input id="title" placeholder="输入待办标题" aria-label="待办标题">
+    <button id="addBtn" type="button">添加</button>
+    <div id="todoError" class="result error" role="alert"></div>
+    <ul id="todoList" aria-label="待办列表"></ul>
+  </section>
+
+  <script>
+    async function api(url, method = 'GET', params) {
+      const opts = { method };
+      if (params) {
+        opts.headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+        opts.body = new URLSearchParams(params);
+      }
+      const resp = await fetch(url, opts);
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || '请求失败');
+      return data;
+    }
+
+    document.getElementById('calcBtn').onclick = async () => {
+      const el = document.getElementById('calcResult');
+      try {
+        const data = await api('/api/calc', 'POST', {
+          a: document.getElementById('a').value,
+          b: document.getElementById('b').value,
+          op: document.getElementById('op').value,
+        });
+        el.className = 'result';
+        el.textContent = '结果：' + data.result;
+      } catch (e) {
+        el.className = 'result error';
+        el.textContent = e.message;
+      }
+    };
+
+    function render(todos) {
+      const ul = document.getElementById('todoList');
+      ul.innerHTML = '';
+      todos.forEach(t => {
+        const li = document.createElement('li');
+        if (t.done) li.className = 'done';
+        const span = document.createElement('span');
+        span.textContent = t.title;
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.textContent = t.done ? '撤销' : '完成';
+        toggle.onclick = () => mutate('/api/todos/toggle', { id: t.id });
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.textContent = '删除';
+        del.onclick = () => mutate('/api/todos/delete', { id: t.id });
+        li.append(span, toggle, del);
+        ul.appendChild(li);
+      });
+    }
+
+    async function mutate(url, params) {
+      const err = document.getElementById('todoError');
+      try {
+        render(await api(url, 'POST', params));
+        err.textContent = '';
+      } catch (e) {
+        err.textContent = e.message;
+      }
+    }
+
+    document.getElementById('addBtn').onclick = async () => {
+      const input = document.getElementById('title');
+      await mutate('/api/todos', { title: input.value });
+      input.value = '';
+    };
+    // 注意：页面加载不主动请求 /api/todos，保证打开页面本身不会覆盖 TodoService
+  </script>
+</body>
+</html>
