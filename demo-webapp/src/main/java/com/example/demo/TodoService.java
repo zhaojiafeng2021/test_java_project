@@ -53,9 +53,4 @@ public class TodoService {
         return t;
     }
 
-    public synchronized void delete(int id) {
-        if (todos.remove(id) == null) {
-            throw new IllegalArgumentException("待办不存在: " + id);
-        }
-    }
 }

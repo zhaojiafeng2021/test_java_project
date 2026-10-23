@@ -55,9 +55,6 @@ public class App {
             case "/api/todos/toggle":
                 TODOS.toggle(Integer.parseInt(p.get("id")));
                 break;
-            case "/api/todos/delete":
-                TODOS.delete(Integer.parseInt(p.get("id")));
-                break;
             default:
                 throw new IllegalArgumentException("未知接口: " + path);
         }
