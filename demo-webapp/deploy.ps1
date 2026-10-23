@@ -46,11 +46,11 @@ function Write-Error {
 
 # Stop existing process
 if (Test-Path $PID_FILE) {
-    $pid = Get-Content $PID_FILE -Raw | Out-String | ForEach-Object { $_.Trim() }
-    if ($pid -match '^\d+$') {
-        Write-Status "Stopping existing process (PID: $pid)..."
+    $oldPid = (Get-Content $PID_FILE -Raw).Trim()
+    if ($oldPid -match '^\d+$') {
+        Write-Status "Stopping existing process (PID: $oldPid)..."
         try {
-            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+            Stop-Process -Id $oldPid -Force -ErrorAction SilentlyContinue
             Start-Sleep -Milliseconds 500
             Write-Success "Process stopped"
         } catch {
