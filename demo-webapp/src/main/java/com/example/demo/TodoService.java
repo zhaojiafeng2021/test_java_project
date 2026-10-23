@@ -53,4 +53,8 @@ public class TodoService {
         return t;
     }
 
+    public synchronized int count() {
+        return todos.size();
+    }
+
 }
