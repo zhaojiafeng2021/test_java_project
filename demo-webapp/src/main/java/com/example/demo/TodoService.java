@@ -35,10 +35,11 @@ public class TodoService {
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("标题不能为空");
         }
-        if (title.length() > 50) {
+        String trimmed = title.trim();
+        if (trimmed.length() > 50) {
             throw new IllegalArgumentException("标题不能超过 50 个字符");
         }
-        Todo t = new Todo(seq.incrementAndGet(), title.trim());
+        Todo t = new Todo(seq.incrementAndGet(), trimmed);
         todos.put(t.id, t);
         return t;
     }
